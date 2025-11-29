@@ -264,7 +264,7 @@ class T2kSCompiler:
         "tag_label": r"tag-[0-9a-zA-Z_]+:",  # 标签类型
         "params": {
             "register": r"[rR](?:1[0-5]|[0-3 6-9])",  # 寄存器类型
-            "memery": r"\[(?:[rR](?:1[0-5]|[0-3 6-9]))\]",  # 内存类型
+            "memory": r"\[(?:[rR](?:1[0-5]|[0-3 6-9]))\]",  # 内存类型
             "io_port": r"[0-9][0-9]|[0-9]",  # IO端口类型
             "address": r"[0-9a-fA-F]{1,4}",  # 地址类型
             "immediate": r"[0-9a-fA-F]{1,4}",  # 立即数类型
