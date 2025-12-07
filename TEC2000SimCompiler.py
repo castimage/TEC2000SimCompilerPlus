@@ -292,9 +292,9 @@ class T2kSCompiler:
         "jrz": (0x46, 2, ["address", "tag_label"]),  # JRZ addr - 零标志置位时相对跳转
         "jrnz": (0x47, 2, ["address", "tag_label"]),  # JRNZ addr - 零标志清零时相对跳转
         "jmpa": (0x8000, 4, ["address", "tag_label"]),  # JMPA addr - 绝对跳转
-        "ldrr": (0x81, 2, "register", "memery"),  # LDRR R1, [R2] - 从内存加载到寄存器
+        "ldrr": (0x81, 2, "register", "memory"),  # LDRR R1, [R2] - 从内存加载到寄存器
         "in": (0x82, 2, "io_port"),  # IN port - 从IO端口读取
-        "strr": (0x83, 2, "memery", "register"),  # STRR [R1], R2 - 存储寄存器到内存
+        "strr": (0x83, 2, "memory", "register"),  # STRR [R1], R2 - 存储寄存器到内存
         "pshf": (0x8400, 2),  # PSHF - 压入标志位
         "push": (0x85, 2, "register"),  # PUSH R1 - 压入寄存器
         "out": (0x86, 2, "io_port"),  # OUT port - 输出到IO端口
@@ -444,7 +444,7 @@ class T2kSCompiler:
                 res = f"0{r}"
             else:
                 res = r
-        elif param_type == "memery":
+        elif param_type == "memory":
             res = hex(int(param[1:]))[2:]
         elif param_type == "io_port":
             res = str(int(param))
