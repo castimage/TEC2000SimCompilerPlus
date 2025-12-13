@@ -140,7 +140,7 @@ python TEC2000SimCompiler.py -i program.code -q
 
 > 注：  
 > 1. 标 * 号的指令可用tag标签作为参数  
-> 2. jump系指令可使用offset_jump参数
+> 2. jump系指令与cala指令可使用offset_jump参数
 
 
 ### 寻址方式
