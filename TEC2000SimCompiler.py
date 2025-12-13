@@ -8,7 +8,7 @@ from typing import Literal
 from colorama import init, Fore, Back, Style
 
 __author__ = "castimage"
-__version__ = "0.2.1-dev"
+__version__ = "0.3.0-dev"
 
 def func_timeit(func):
     """
@@ -268,7 +268,8 @@ class T2kSCompiler:
             "io_port": r"[0-9][0-9]|[0-9]",  # IO端口类型
             "address": r"[0-9a-fA-F]{1,4}",  # 地址类型
             "immediate": r"[0-9a-fA-F]{1,4}",  # 立即数类型
-            "tag_label": r"tag-[0-9a-zA-Z_]+"  # 标签类型
+            "tag_label": r"tag-[0-9a-zA-Z_]+",  # 标签类型
+            "offset_jump": r"(?:\+[0-7][0-9a-fA-F]|\+80|\+[0-9a-fA-F]|-[0-7][0-9a-fA-F]|-[0-9a-fA-F])"  # 偏移跳转类型
         }
     }
 
@@ -286,12 +287,12 @@ class T2kSCompiler:
         "inc": (0x9, 2, "register"),  # INC R1 - 寄存器加一
         "shl": (0xa, 2, "register"),  # SHL R1 - 寄存器左移一位
         "shr": (0xb, 2, "register"),  # SHR R1 - 寄存器右移一位
-        "jr": (0x41, 2, ["address", "tag_label"]),  # JR addr - 相对跳转
-        "jrc": (0x44, 2, ["address", "tag_label"]),  # JRC addr - 进位时相对跳转
-        "jrnc": (0x45, 2, ["address", "tag_label"]),  # JRNC addr - 无进位时相对跳转
-        "jrz": (0x46, 2, ["address", "tag_label"]),  # JRZ addr - 零标志置位时相对跳转
-        "jrnz": (0x47, 2, ["address", "tag_label"]),  # JRNZ addr - 零标志清零时相对跳转
-        "jmpa": (0x8000, 4, ["address", "tag_label"]),  # JMPA addr - 绝对跳转
+        "jr": (0x41, 2, ["address", "tag_label", "offset_jump"]),  # JR addr - 相对跳转
+        "jrc": (0x44, 2, ["address", "tag_label", "offset_jump"]),  # JRC addr - 进位时相对跳转
+        "jrnc": (0x45, 2, ["address", "tag_label", "offset_jump"]),  # JRNC addr - 无进位时相对跳转
+        "jrz": (0x46, 2, ["address", "tag_label", "offset_jump"]),  # JRZ addr - 零标志置位时相对跳转
+        "jrnz": (0x47, 2, ["address", "tag_label", "offset_jump"]),  # JRNZ addr - 零标志清零时相对跳转
+        "jmpa": (0x8000, 4, ["address", "tag_label", "offset_jump"]),  # JMPA addr - 绝对跳转
         "ldrr": (0x81, 2, "register", "memory"),  # LDRR R1, [R2] - 从内存加载到寄存器
         "in": (0x82, 2, "io_port"),  # IN port - 从IO端口读取
         "strr": (0x83, 2, "memory", "register"),  # STRR [R1], R2 - 存储寄存器到内存
@@ -302,7 +303,7 @@ class T2kSCompiler:
         "mvrd": (0x88, 4, "register", ["immediate", "tag_label"]),  # MVRD R1, DATA - 移动立即数到寄存器
         "popf": (0x8c00, 2),  # POPF - 弹出标志位
         "ret": (0x8f00, 2),  # RET - 返回
-        "cala": (0xce00, 4, ["address", "tag_label"]),  # CALA addr - 调用绝对地址
+        "cala": (0xce00, 4, ["address", "tag_label", "offset_jump"]),  # CALA addr - 调用绝对地址
 
         # 监控程序可调用子程序
         "inch": (0xce000524, 4),  # INCH - 输入字符
@@ -454,6 +455,9 @@ class T2kSCompiler:
             res = hex(int(param, 16))[2:].zfill(4)
         elif param_type == "tag_label":
             res = hex(int(self.labels.get(param)))[2:].zfill(4) if not is_offset else hex(int(self.labels.get(param)) - original_address - 1)[2:].zfill(2) if int(self.labels.get(param)) > original_address else hex(int(self.labels.get(param)) + 0xFF - original_address)[2:].zfill(2)
+        elif param_type == "offset_jump":
+            res = hex(original_address + int(param, 16))[2:].zfill(4) if not is_offset else hex(int(param, 16) - 1)[2:].zfill(2) if int(param, 16) > 0 else hex(int(param, 16) + 0xFF)[2:].zfill(2)
+            pass
 
         return res
 
@@ -499,13 +503,20 @@ class T2kSCompiler:
                 # 检查偏移量是否超出合法范围
                 if line[0] in self.op_offset:
                     is_addr = re.fullmatch(self.syntax_arg_regex.get("params").get("address"), line[1]) is not None
-                    if line[1] not in self.labels:
+                    is_offset_jump = re.fullmatch(self.syntax_arg_regex.get("params").get("offset_jump"), line[1]) is not None
+
+                    if not is_addr and not is_offset_jump and line[1] not in self.labels:
                         logger.log_error(f"标签 '{line[1]}' 未定义！")
                         raise T2kSLabelNotFoundError(line[1])
-                    addr = int(line[1], 16) if is_addr else self.labels.get(line[1])
-                    offset = addr - int(now, 16)
-                    offset += 0xFF if offset <= 0 else -0x1
-                    if not offset <= 0xFF:
+
+                    if is_offset_jump:
+                        offset = int(line[1], 16)
+                        addr = int(now, 16) + offset
+                    else:
+                        addr = int(line[1], 16) if is_addr else self.labels.get(line[1])
+                        offset = addr - int(now, 16)
+
+                    if not -0x7F <= offset <= 0x80:
                         raise T2kSJumpError(now, hex(addr) if is_addr else hex(self.labels.get(line[1])))
 
                 # 获取指令定义

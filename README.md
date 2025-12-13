@@ -71,12 +71,13 @@ python TEC2000SimCompiler.py -i program.code -q
 - 位置跳转标签：`[0-9a-fA-F]{1,4}:`
 
 ### 参数样式
-- register(寄存器)：`R0-R15`（受限于实际硬件，可用 R0-R3, R6-R15）
+- register(寄存器)：`R0-R15`（受限于实际软件改动，可用 R0-R3, R6-R15）
 - memory(内存)：`[0000-FFFF]`
 - io_port(I/O 端口)：`00-99`
 - address(地址)：`0000-FFFF`
 - immediate(立即数)：`0000-FFFF`
 - tag_label(普通标签)：`tag-[0-9a-zA-Z_]+`
+- offset_jump(跳转偏移)：`+[0-7][0-9a-fA-F]|+80|-[0-7][0-9a-fA-F]`  # **自设**
 
 ### 支持的指令
 
@@ -137,7 +138,10 @@ python TEC2000SimCompiler.py -i program.code -q
 #### 自设指令
 - `dw DATA` - 定义16位数据
 
-> 注：标*号的指令可用tag标签作为参数
+> 注：  
+> 1. 标 * 号的指令可用tag标签作为参数  
+> 2. jump系指令可使用offset_jump参数
+
 
 ### 寻址方式
 
