@@ -457,7 +457,6 @@ class T2kSCompiler:
             res = hex(int(self.labels.get(param)))[2:].zfill(4) if not is_offset else hex(int(self.labels.get(param)) - original_address - 1)[2:].zfill(2) if int(self.labels.get(param)) > original_address else hex(int(self.labels.get(param)) + 0xFF - original_address)[2:].zfill(2)
         elif param_type == "offset_jump":
             res = hex(original_address + int(param, 16))[2:].zfill(4) if not is_offset else hex(int(param, 16) - 1)[2:].zfill(2) if int(param, 16) > 0 else hex(int(param, 16) + 0xFF)[2:].zfill(2)
-            pass
 
         return res
 
