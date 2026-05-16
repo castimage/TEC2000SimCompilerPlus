@@ -435,7 +435,7 @@ class T2kSCompiler:
                 op_base = hex(config[0])[2:]
 
                 # 合并生成单条指令完整机器码
-                op = hex(int(f'"0x{op_base}{''.join(params)}"', 16))[2:].zfill(4)
+                op = hex(int(f'0x{op_base}{''.join(params)}', 16))[2:].zfill(4)
 
                 op = op[4:] if str(line[0]).lower() == 'dw' else op
 
